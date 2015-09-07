@@ -4,9 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-//using System.Security.Cryptography.X509Certificates;
 using System.Text;
-//using System.Security;
 using System.Web;
 
 
@@ -159,8 +157,7 @@ namespace MasterCard.SDK
         /// <param name="oparams"></param>
         /// <param name="body"></param>
         /// <returns></returns>
-        protected Dictionary<string, string> doRequest(string httpsURL, string requestMethod,
-                            OAuthParameters oparams, string body)
+        protected Dictionary<string, string> doRequest(string httpsURL, string requestMethod, OAuthParameters oparams, string body)
         {
             try
             {
@@ -210,15 +207,11 @@ namespace MasterCard.SDK
                 }
                 catch (CryptographicException cex)
                 {
-                    throw new CryptographicException(cex.Message);
+                    throw new MCApiRuntimeException(cex.Message, cex);
                 }
 
             }
 
-            //SHA1 sha = new SHA1CryptoServiceProvider();
-            //string encodedHash = Convert.ToBase64String(sha.ComputeHash(bodyStringBytes));
-            //oparams.addParameter(OAUTH_BODY_HASH, encodedHash);
-            //return oparams;
         }
 
         /// <summary>
@@ -366,24 +359,25 @@ namespace MasterCard.SDK
 
             using (var csp = (RSACryptoServiceProvider)keyStore)
             {
-                using (var sha1 = new SHA1Managed())
+                try
                 {
-                    //UnicodeEncoding encoding = new UnicodeEncoding();
-                    byte[] hash = sha1.ComputeHash(baseStringBytes);
-                    byte[] signedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
-                    return Convert.ToBase64String(signedHashValue);
+                    using (var sha1 = new SHA1Managed())
+                    {
+                        //UnicodeEncoding encoding = new UnicodeEncoding();
+                        byte[] hash = sha1.ComputeHash(baseStringBytes);
+                        byte[] signedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
+                        return Convert.ToBase64String(signedHashValue);
+                    }
+                }
+                catch (CryptographicException cex)
+                {
+                    throw new MCApiRuntimeException(cex.Message, cex);
+                }
+                catch (Exception ex)
+                {
+                    throw new MCApiRuntimeException(ex.Message, ex);
                 }
             }
-
-            //RSACryptoServiceProvider csp = (RSACryptoServiceProvider)KeyStore;
-            //// Hash the data
-            //SHA1Managed sha1 = new SHA1Managed();
-            //UnicodeEncoding encoding = new UnicodeEncoding();
-            //byte[] hash = sha1.ComputeHash(baseStringBytes);
-
-            //// Sign the hash
-            //byte[] SignedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
-            //return Convert.ToBase64String(SignedHashValue);
         }
 
         /// <summary>
@@ -503,34 +497,6 @@ namespace MasterCard.SDK
             {
                 throw new MCApiRuntimeException(wex.Message, wex);
             }
-
-            //try
-            //{
-            //    HttpWebResponse webResp = (HttpWebResponse)connection.GetResponse();
-
-            //    if ((int)webResp.StatusCode >= SC_MULTIPLE_CHOICES)
-            //    {
-            //        string message = readResponse(webResp);
-            //        // Cut the html off of the error message and leave the body
-            //        if (message.Contains(HTML_TAG))
-            //        {
-            //            message = message.Substring(message.IndexOf(BODY_OPENING_TAG) + 6, message.IndexOf(BODY_CLOSING_TAG));
-            //        }
-            //        throw new MCApiRuntimeException(message);
-            //    }
-            //    else
-            //    {
-            //        Dictionary<string, string> responseMap = new Dictionary<string, string>();
-            //        responseMap.Add(MESSAGE, readResponse(webResp));
-            //        responseMap.Add(HTTP_CODE, webResp.StatusCode.ToString());
-
-            //        return responseMap;
-            //    }
-            //}
-            //catch (WebException wex)
-            //{
-            //    throw new MCApiRuntimeException(wex.Message, wex);
-            //}
         }
 
         /// <summary>
@@ -553,12 +519,6 @@ namespace MasterCard.SDK
                 return string.Empty;
             }
 
-            //Stream dataStream = response.GetResponseStream();
-            //StreamReader reader = new StreamReader(dataStream);
-            //string responseFromServer = reader.ReadToEnd();
-            //reader.Close();
-            //dataStream.Close();
-            //return responseFromServer;
         }
 
         /// <summary>
@@ -573,9 +533,6 @@ namespace MasterCard.SDK
             {
                 newStream.Write(encodedBody, 0, encodedBody.Length);
             }
-            //Stream newStream = con.GetRequestStream();
-            //newStream.Write(encodedBody, 0, encodedBody.Length);
-            //newStream.Close();
         }
 
         /// <summary>
@@ -599,9 +556,6 @@ namespace MasterCard.SDK
         /// <returns></returns>
         private static string getTimestamp()
         {
-            //long ticks = DateTime.UtcNow.Ticks - DateTime.Parse("01/01/1970 00:00:00").Ticks;
-            //ticks /= 10000000; //Convert windows ticks to seconds
-
             var _epochTime = (DateTime.UtcNow.Ticks - UNIX_EPOCH_TICKS) / 10000000;
             return _epochTime.ToString();
         }

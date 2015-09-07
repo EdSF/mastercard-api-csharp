@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
+﻿using System.Text;
 using System.Web;
-using MasterCard.SDK;
 
 namespace MasterCard.SDK.Util
 {
     public class URLUtil
     {
-        public static string AddQueryParameter(string url, string descriptor, string value, bool considerIgnoreValue, String ignoreValue)
+        public static string AddQueryParameter(string url, string descriptor, string value, bool considerIgnoreValue, string ignoreValue)
         {
             try
             {
