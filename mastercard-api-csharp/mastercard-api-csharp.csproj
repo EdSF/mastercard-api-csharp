@@ -134,18 +134,25 @@
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\CardBrandsService.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\ConnectedMerchantHistoryService.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\DeletePairingService.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\All\AllServices.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\authorizeExpressCheckoutRequest.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\authorizeExpressCheckoutResponse.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\authorizePreCheckoutRequest.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\CardBrandsRequest.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\CardBrandsResponse.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\Card\CardServices.designer.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\Common\CommonTypes.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\connectionHistoryRequest.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\deletePairingRequest.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\deletePairingResponse.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\Merchant.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\Options\CardBrandsOptions.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\PartnerProvisioning\PartnerProvisioning.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\RewardProgramOfferingsResponse.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\RewardProgramOfferings\RewardProgramOfferings.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\shippingAddressVerificationRequest.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\shippingAddressVerificationResponse.designer.cs" />
+    <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\SwitchAPI\SwitchApiServices.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\WalletStorage\addressAndCard.designer.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\WalletStorage\RewardProgram.cs" />
     <Compile Include="MasterCard\SDK\Services\PartnerWallet\Domain\WalletStorage\shippingAddress.designer.cs" />
@@ -178,6 +185,26 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\All\AllServices.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\Card\CardServices.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\Common\CommonTypes.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\PartnerProvisioning\PartnerProvisioning.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\RewardProgramOfferings\RewardProgramOfferings.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MasterCard\SDK\Services\PartnerWallet\Domain\SwitchAPI\SwitchApiServices.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

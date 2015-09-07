@@ -4,9 +4,9 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+//using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Security;
+//using System.Security;
 using System.Web;
 
 
@@ -17,6 +17,9 @@ namespace MasterCard.SDK
     /// </summary>
     public class Connector
     {
+
+        private const long UNIX_EPOCH_TICKS = 621355968000000000L;
+
         public static string EMPTY_STRING = "";
         protected static string EQUALS = "=";
         protected static string AMP = "&";
@@ -40,28 +43,28 @@ namespace MasterCard.SDK
         private static string DOUBLE_QOUTE = "\"";
         private static string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         private static readonly string[] UriRfc3986CharsToEscape = new[] { "!", "*", "'", "(", ")" };
-        private const String HTML_TAG = "<html>";
-        private const String BODY_OPENING_TAG = "<body>";
-        private const String BODY_CLOSING_TAG = "</body>";
+        private const string HTML_TAG = "<html>";
+        private const string BODY_OPENING_TAG = "<body>";
+        private const string BODY_CLOSING_TAG = "</body>";
 
-        private const String NULL_RESPONSE_PARAMETERS_ERROR = "ResponseParameters can not be null.";
-        private const String NULL_PARAMETERS_ERROR = "Null parameters passed to method call";
-        private const String NULL_PRIVATEKEY_ERROR_MESSAGE = "Private Key is null";
+        private const string NULL_RESPONSE_PARAMETERS_ERROR = "ResponseParameters can not be null.";
+        private const string NULL_PARAMETERS_ERROR = "Null parameters passed to method call";
+        private const string NULL_PRIVATEKEY_ERROR_MESSAGE = "Private Key is null";
 
-        private const String CONTENT_TYPE = "content-type";
-        private const String CONTENT_LENGTH = "content-length";
-        private const String APPLICATION_XML = "application/xml";
-        private const String AUTHORIZATION = "Authorization";
+        private const string CONTENT_TYPE = "content-type";
+        private const string CONTENT_LENGTH = "content-length";
+        private const string APPLICATION_XML = "application/xml";
+        private const string AUTHORIZATION = "Authorization";
 
-        private static Random random = new Random();
-        private static UTF8Encoding encoder = new UTF8Encoding();
+        private static readonly Random random = new Random();
+        private static readonly UTF8Encoding encoder = new UTF8Encoding();
 
         public string SignatureBaseString { get { return _signatureBaseString; } }
-        public String AuthHeader { get { return _authHeader; } }
+        public string AuthHeader { get { return _authHeader; } }
         private string ConsumerKey { get; set; }
         private AsymmetricAlgorithm privateKey { get; set; }
         private string _signatureBaseString;
-        private String _authHeader;
+        private string _authHeader;
 
 
         /// <summary>
@@ -72,11 +75,11 @@ namespace MasterCard.SDK
         /// <param name="privateKey"></param>
         public Connector(string consumerKey, AsymmetricAlgorithm privateKey)
         {
-            this.ConsumerKey = consumerKey;
+            ConsumerKey = consumerKey;
             this.privateKey = privateKey;
 
             // Turns the handling of a 100 HTTP server response ON
-            System.Net.ServicePointManager.Expect100Continue = true;
+            ServicePointManager.Expect100Continue = true;
         }
 
         /// <summary> 
@@ -134,7 +137,7 @@ namespace MasterCard.SDK
         /// <returns></returns>
         protected Dictionary<string, string> doRequest(string url, string requestMethod, string body)
         {
-            return this.doRequest(url, requestMethod, OAuthParametersFactory(), body);
+            return doRequest(url, requestMethod, OAuthParametersFactory(), body);
         }
 
         /// <summary>
@@ -145,7 +148,7 @@ namespace MasterCard.SDK
         /// <returns></returns>
         protected Dictionary<string, string> doRequest(string url, string requestMethod)
         {
-            return this.doRequest(url, requestMethod, OAuthParametersFactory(), null);
+            return doRequest(url, requestMethod, OAuthParametersFactory(), null);
         }
 
         /// <summary>
@@ -156,8 +159,8 @@ namespace MasterCard.SDK
         /// <param name="oparams"></param>
         /// <param name="body"></param>
         /// <returns></returns>
-        protected Dictionary<string, string> doRequest(String httpsURL, String requestMethod,
-                            OAuthParameters oparams, String body)
+        protected Dictionary<string, string> doRequest(string httpsURL, string requestMethod,
+                            OAuthParameters oparams, string body)
         {
             try
             {
@@ -165,7 +168,7 @@ namespace MasterCard.SDK
                 {
                     throw new MCApiRuntimeException(NULL_PRIVATEKEY_ERROR_MESSAGE);
                 }
-                if (body != null && body.Length > 0)
+                if (!string.IsNullOrEmpty(body))
                 {
                     oparams = setOauthBodyHashParameter(body, oparams);
                 }
@@ -193,13 +196,29 @@ namespace MasterCard.SDK
         /// <param name="body"></param>
         /// <param name="oparams"></param>
         /// <returns></returns>
-        private OAuthParameters setOauthBodyHashParameter(String body, OAuthParameters oparams)
+        private OAuthParameters setOauthBodyHashParameter(string body, OAuthParameters oparams)
         {
             byte[] bodyStringBytes = encoder.GetBytes(body);
-            SHA1 sha = new SHA1CryptoServiceProvider();
-            string encodedHash = Convert.ToBase64String(sha.ComputeHash(bodyStringBytes));
-            oparams.addParameter(OAUTH_BODY_HASH, encodedHash);
-            return oparams;
+
+            using (var sha = new SHA1CryptoServiceProvider())
+            {
+                try
+                {
+                    string encodedHash = Convert.ToBase64String(sha.ComputeHash(bodyStringBytes));
+                    oparams.addParameter(OAUTH_BODY_HASH, encodedHash);
+                    return oparams;
+                }
+                catch (CryptographicException cex)
+                {
+                    throw new CryptographicException(cex.Message);
+                }
+
+            }
+
+            //SHA1 sha = new SHA1CryptoServiceProvider();
+            //string encodedHash = Convert.ToBase64String(sha.ComputeHash(bodyStringBytes));
+            //oparams.addParameter(OAUTH_BODY_HASH, encodedHash);
+            //return oparams;
         }
 
         /// <summary>
@@ -210,8 +229,7 @@ namespace MasterCard.SDK
         /// <param name="oparams"></param>
         /// <param name="body"></param>
         /// <returns></returns>
-        private HttpWebRequest setupConnection(String httpsURL,
-            String requestMethod, OAuthParameters oparams, String body)
+        private HttpWebRequest setupConnection(string httpsURL, string requestMethod, OAuthParameters oparams, string body)
         {
             Uri url = new Uri(httpsURL);
             HttpWebRequest con = (HttpWebRequest)WebRequest.Create(url);
@@ -234,13 +252,13 @@ namespace MasterCard.SDK
         /// <param name="requestMethod"></param>
         /// <param name="oparams"></param>
         /// <returns></returns>
-        private string buildAuthHeaderString(String httpsURL, String requestMethod, OAuthParameters oparams)
+        private string buildAuthHeaderString(string httpsURL, string requestMethod, OAuthParameters oparams)
         {
             generateAndSignSignature(httpsURL, requestMethod, oparams);
             StringBuilder buffer = new StringBuilder();
             buffer.Append(OAUTH_START_STRING);
             buffer = parseParameters(buffer, oparams);
-            this._authHeader = buffer.ToString();
+            _authHeader = buffer.ToString();
             return buffer.ToString();
         }
 
@@ -269,14 +287,15 @@ namespace MasterCard.SDK
         /// <param name="key"></param>
         /// <param name="paramap"></param>
         /// <returns></returns>
-        private StringBuilder parseSortedSetValues(StringBuilder buffer, String key, SortedSet<string> paramap)
+        private void parseSortedSetValues(StringBuilder buffer, string key, SortedSet<string> paramap)
         {
             foreach (string value in paramap.Keys)
             {
                 buffer.Append(key).Append(EQUALS).Append(DOUBLE_QOUTE).Append(UrlEncodeRfc3986(value)).Append(DOUBLE_QOUTE);
             }
-            return buffer;
+            //return;
         }
+
         /// <summary>
         /// Splits the responseParameters string into Key/Value pairs in the returned Dictionary 
         /// </summary>
@@ -294,7 +313,7 @@ namespace MasterCard.SDK
 
             foreach (string value in parameters)
             {
-                String[] keyValue = value.Split('=');
+                string[] keyValue = value.Split('=');
                 if (keyValue.Length == 2)
                 {
                     result.Add(keyValue[0], keyValue[1]);
@@ -311,7 +330,7 @@ namespace MasterCard.SDK
         /// <param name="requestMethod"></param>
         /// <param name="oparams"></param>
         /// <returns></returns>
-        private string generateAndSignSignature(String httpsURL, String requestMethod, OAuthParameters oparams)
+        private string generateAndSignSignature(string httpsURL, string requestMethod, OAuthParameters oparams)
         {
             OAuthParameters sbsParams = new OAuthParameters();
             sbsParams.putAll(oparams.getBaseParameters());
@@ -322,12 +341,10 @@ namespace MasterCard.SDK
                 realm = sbsParams.get(REALM);
                 sbsParams.remove(REALM, null);
             }
-            String baseString;
-            baseString = generateSignatureBaseString(httpsURL, requestMethod, sbsParams);
+            var baseString = generateSignatureBaseString(httpsURL, requestMethod, sbsParams);
             _signatureBaseString = baseString;
 
-            String signature;
-            signature = sign(baseString, privateKey);
+            var signature = sign(baseString, privateKey);
             oparams.addParameter(OAUTH_SIGNATURE, signature);
             if (realm != null)
             {
@@ -340,21 +357,33 @@ namespace MasterCard.SDK
         /// Method to signthe signature base string. 
         /// </summary>
         /// <param name="baseString"></param>
-        /// <param name="KeyStore"></param>
+        /// <param name="keyStore"></param>
         /// <returns></returns>
-        private string sign(string baseString, AsymmetricAlgorithm KeyStore)
+        private string sign(string baseString, AsymmetricAlgorithm keyStore)
         {
             byte[] baseStringBytes = encoder.GetBytes(baseString);
 
-            RSACryptoServiceProvider csp = (RSACryptoServiceProvider)KeyStore;
-            // Hash the data
-            SHA1Managed sha1 = new SHA1Managed();
-            UnicodeEncoding encoding = new UnicodeEncoding();
-            byte[] hash = sha1.ComputeHash(baseStringBytes);
 
-            // Sign the hash
-            byte[] SignedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
-            return Convert.ToBase64String(SignedHashValue);
+            using (var csp = (RSACryptoServiceProvider)keyStore)
+            {
+                using (var sha1 = new SHA1Managed())
+                {
+                    //UnicodeEncoding encoding = new UnicodeEncoding();
+                    byte[] hash = sha1.ComputeHash(baseStringBytes);
+                    byte[] signedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
+                    return Convert.ToBase64String(signedHashValue);
+                }
+            }
+
+            //RSACryptoServiceProvider csp = (RSACryptoServiceProvider)KeyStore;
+            //// Hash the data
+            //SHA1Managed sha1 = new SHA1Managed();
+            //UnicodeEncoding encoding = new UnicodeEncoding();
+            //byte[] hash = sha1.ComputeHash(baseStringBytes);
+
+            //// Sign the hash
+            //byte[] SignedHashValue = csp.SignHash(hash, CryptoConfig.MapNameToOID("SHA1"));
+            //return Convert.ToBase64String(SignedHashValue);
         }
 
         /// <summary>
@@ -367,8 +396,7 @@ namespace MasterCard.SDK
         private string generateSignatureBaseString(string httpsURL, string requestMethod, OAuthParameters oparams)
         {
             Uri requestUri = parseUrl(httpsURL);
-            String encodedBaseString;
-            encodedBaseString = UrlEncodeRfc3986(requestMethod.ToUpper()) + AMP + UrlEncodeRfc3986(normalizeUrl(requestUri)) + AMP + UrlEncodeRfc3986(normalizeParameters(httpsURL, oparams));
+            var encodedBaseString = UrlEncodeRfc3986(requestMethod.ToUpper()) + AMP + UrlEncodeRfc3986(normalizeUrl(requestUri)) + AMP + UrlEncodeRfc3986(normalizeParameters(httpsURL, oparams));
             return encodedBaseString;
         }
 
@@ -377,7 +405,7 @@ namespace MasterCard.SDK
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
-        private static String normalizeUrl(Uri uri)
+        private static string normalizeUrl(Uri uri)
         {
             return uri.Scheme + COLON_2X_BACKSLASH + uri.Host + uri.AbsolutePath;
         }
@@ -388,7 +416,7 @@ namespace MasterCard.SDK
         /// <param name="httpUrl"></param>
         /// <param name="requestParameters"></param>
         /// <returns></returns>
-        private static String normalizeParameters(String httpUrl, OAuthParameters requestParameters)
+        private static string normalizeParameters(string httpUrl, OAuthParameters requestParameters)
         {
             // add the querystring to the base string (if one exists)
             if (httpUrl.IndexOf(QUESTION_MARK) > 0)
@@ -447,33 +475,62 @@ namespace MasterCard.SDK
         /// <returns></returns>
         private Dictionary<string, string> checkForErrorsAndReturnRepsonse(HttpWebRequest connection)
         {
+
             try
             {
-                HttpWebResponse webResp = (HttpWebResponse)connection.GetResponse();
-
-                if ((int)webResp.StatusCode >= SC_MULTIPLE_CHOICES)
+                using (var webResp = (HttpWebResponse)connection.GetResponse())
                 {
-                    String message = readResponse(webResp);
-                    // Cut the html off of the error message and leave the body
-                    if (message.Contains(HTML_TAG))
+                    if ((int)webResp.StatusCode >= SC_MULTIPLE_CHOICES)
                     {
-                        message = message.Substring(message.IndexOf(BODY_OPENING_TAG) + 6, message.IndexOf(BODY_CLOSING_TAG));
+                        string message = readResponse(webResp);
+                        // Cut the html off of the error message and leave the body
+                        if (message.Contains(HTML_TAG))
+                        {
+                            message = message.Substring(message.IndexOf(BODY_OPENING_TAG) + 6, message.IndexOf(BODY_CLOSING_TAG));
+                        }
+                        throw new MCApiRuntimeException(message);
                     }
-                    throw new MCApiRuntimeException(message);
-                }
-                else
-                {
-                    Dictionary<String, String> responseMap = new Dictionary<String, String>();
+
+                    var responseMap = new Dictionary<string, string>();
                     responseMap.Add(MESSAGE, readResponse(webResp));
                     responseMap.Add(HTTP_CODE, webResp.StatusCode.ToString());
 
                     return responseMap;
                 }
+
             }
             catch (WebException wex)
             {
                 throw new MCApiRuntimeException(wex.Message, wex);
             }
+
+            //try
+            //{
+            //    HttpWebResponse webResp = (HttpWebResponse)connection.GetResponse();
+
+            //    if ((int)webResp.StatusCode >= SC_MULTIPLE_CHOICES)
+            //    {
+            //        string message = readResponse(webResp);
+            //        // Cut the html off of the error message and leave the body
+            //        if (message.Contains(HTML_TAG))
+            //        {
+            //            message = message.Substring(message.IndexOf(BODY_OPENING_TAG) + 6, message.IndexOf(BODY_CLOSING_TAG));
+            //        }
+            //        throw new MCApiRuntimeException(message);
+            //    }
+            //    else
+            //    {
+            //        Dictionary<string, string> responseMap = new Dictionary<string, string>();
+            //        responseMap.Add(MESSAGE, readResponse(webResp));
+            //        responseMap.Add(HTTP_CODE, webResp.StatusCode.ToString());
+
+            //        return responseMap;
+            //    }
+            //}
+            //catch (WebException wex)
+            //{
+            //    throw new MCApiRuntimeException(wex.Message, wex);
+            //}
         }
 
         /// <summary>
@@ -483,12 +540,25 @@ namespace MasterCard.SDK
         /// <returns></returns>
         private string readResponse(HttpWebResponse response)
         {
-            Stream dataStream = response.GetResponseStream();
-            StreamReader reader = new StreamReader(dataStream);
-            string responseFromServer = reader.ReadToEnd();
-            reader.Close();
-            dataStream.Close();
-            return responseFromServer;
+            using (var dataStream = response.GetResponseStream())
+            {
+                if (dataStream != null)
+                {
+                    using (var reader = new StreamReader(dataStream))
+                    {
+                        string responseFromServer = reader.ReadToEnd();
+                        return responseFromServer;
+                    }
+                }
+                return string.Empty;
+            }
+
+            //Stream dataStream = response.GetResponseStream();
+            //StreamReader reader = new StreamReader(dataStream);
+            //string responseFromServer = reader.ReadToEnd();
+            //reader.Close();
+            //dataStream.Close();
+            //return responseFromServer;
         }
 
         /// <summary>
@@ -496,20 +566,23 @@ namespace MasterCard.SDK
         /// </summary>
         /// <param name="body"></param>
         /// <param name="con"></param>
-        private void writeBodyToConnection(String body, HttpWebRequest con)
+        private void writeBodyToConnection(string body, HttpWebRequest con)
         {
             byte[] encodedBody = encoder.GetBytes(body);
-            Stream newStream = con.GetRequestStream();
-
-            newStream.Write(encodedBody, 0, encodedBody.Length);
-            newStream.Close();
+            using (var newStream = con.GetRequestStream())
+            {
+                newStream.Write(encodedBody, 0, encodedBody.Length);
+            }
+            //Stream newStream = con.GetRequestStream();
+            //newStream.Write(encodedBody, 0, encodedBody.Length);
+            //newStream.Close();
         }
 
         /// <summary>
         /// Generates a 17 character Nonce
         /// </summary>
         /// <returns></returns>
-        private static String getNonce()
+        private static string getNonce()
         {
             int length = 17;
             var nonceString = new StringBuilder();
@@ -524,11 +597,13 @@ namespace MasterCard.SDK
         /// Generates a timestamp
         /// </summary>
         /// <returns></returns>
-        private static String getTimestamp()
+        private static string getTimestamp()
         {
-            long ticks = DateTime.UtcNow.Ticks - DateTime.Parse("01/01/1970 00:00:00").Ticks;
-            ticks /= 10000000; //Convert windows ticks to seconds
-            return ticks.ToString();
+            //long ticks = DateTime.UtcNow.Ticks - DateTime.Parse("01/01/1970 00:00:00").Ticks;
+            //ticks /= 10000000; //Convert windows ticks to seconds
+
+            var _epochTime = (DateTime.UtcNow.Ticks - UNIX_EPOCH_TICKS) / 10000000;
+            return _epochTime.ToString();
         }
 
         /// <summary>
