@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System;
+using System.Xml;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
@@ -41,10 +42,33 @@ namespace MasterCard.SDK
         /// <returns>Returns an object of type T, which has been deserialized from the supplied XML input string.</returns>
         public static T Deserialize(string xml)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(xml);
-
-            return Deserialize(doc);
+            if (!string.IsNullOrEmpty(xml))
+            {
+                try
+                {
+                    var _serializer = new XmlSerializer(typeof(T));
+                    var _xml = Encoding.UTF8.GetBytes(xml);
+                    using (MemoryStream _ms = new MemoryStream(_xml))
+                    {
+                        _ms.Write(_xml, 0, _xml.Length);
+                        _ms.Position = 0;
+                        return (T)_serializer.Deserialize(_ms);
+                    }
+                }
+                catch (XmlException xex)
+                {
+                    throw new MCApiRuntimeException(xex.Message, xex);
+                }
+                catch (InvalidOperationException opx)
+                {
+                    throw new MCApiRuntimeException(opx.Message, opx);
+                }
+                catch (IOException iox)
+                {
+                    throw new MCApiRuntimeException(iox.Message, iox);
+                }
+            }
+            throw new MCApiRuntimeException("xml has no data", new ArgumentNullException(nameof(xml)));
         }
 
         /// <summary>
@@ -56,13 +80,17 @@ namespace MasterCard.SDK
         public static T Deserialize(XmlDocument doc)
         {
             //Assuming doc is an XML document containing a serialized object and objType is a System.Type set to the type of the object.
-            XmlNodeReader reader = new XmlNodeReader(doc.DocumentElement);
-            XmlSerializer serializer = new XmlSerializer(typeof(T));
-            object obj = serializer.Deserialize(reader);
-            // Then you just need to cast obj into whatever type it is eg:
-            T myObj = (T)obj;
+            if (doc?.DocumentElement !=null)
+            {
+                XmlNodeReader reader = new XmlNodeReader(doc.DocumentElement);
+                XmlSerializer serializer = new XmlSerializer(typeof(T));
+                object obj = serializer.Deserialize(reader);
+                // Then you just need to cast obj into whatever type it is eg:
+                T myObj = (T)obj;
 
-            return myObj;
+                return myObj;
+            }
+            throw new MCApiRuntimeException("invalid xml doc", new ArgumentNullException(nameof(doc)));
         }
     }
 
